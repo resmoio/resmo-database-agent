@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	URL            string
 	IngestKey      string
 	Version        string
 	DSN            string
 	Schedule       string
 	Timeout        string
+	DbIdentifier   string
 	DomainOverride string
 }
 
@@ -37,6 +37,7 @@ func (c *Config) ReadConfig(ver string) error {
 	flag.StringVar(&c.Timeout, "timeout", "", "timeout duration for connections")
 	flag.StringVar(&c.DSN, "dsn", "", "database datasource name")
 	flag.StringVar(&c.IngestKey, "ingestKey", "", "ingestKey of the integration")
+	flag.StringVar(&c.DbIdentifier, "dbIdentifier", "", "database identifier for Resmo resources")
 	flag.StringVar(&c.DomainOverride, "domainOverride", "", "domain url for ingesting")
 
 	flag.Parse()

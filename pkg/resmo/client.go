@@ -5,9 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
+	"github.com/kos-v/dsnparser"
 	"net/http"
-	"net/url"
 	"resmo-db-mapper/pkg/config"
 )
 
@@ -28,7 +27,8 @@ func Ingest(ctx context.Context, config config.Config, driverType string, resour
 		return fmt.Errorf("error creating request: %v", err)
 	}
 
-	dbUrl, err := extractDomainAndPort(config.DSN)
+	dbIdentifier := config.DbIdentifier
+	dbIdentifier, err = extractDomainAndPort(dbIdentifier, config)
 	if err != nil {
 		return fmt.Errorf("error while extracting domain and port from DSN: %w", err)
 	}
@@ -36,7 +36,7 @@ func Ingest(ctx context.Context, config config.Config, driverType string, resour
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Ingest-Key", config.IngestKey)
 	req.Header.Set("Resmo-Database-Agent", config.Version)
-	req.Header.Set("DB-URL", dbUrl)
+	req.Header.Set("DB-Identifier", dbIdentifier)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -48,20 +48,19 @@ func Ingest(ctx context.Context, config config.Config, driverType string, resour
 
 	return nil
 }
-func extractDomainAndPort(urlStr string) (string, error) {
-	uri, err := url.Parse(urlStr)
-	if err != nil {
-		return "", fmt.Errorf("invalid URL format for given URL: %s", urlStr)
-	}
 
-	host, port, err := net.SplitHostPort(uri.Host)
-	if err != nil {
-		return "", fmt.Errorf("failed to split host and port: %w", err)
-	}
+func extractDomainAndPort(dbIdentifier string, config config.Config) (string, error) {
+	if dbIdentifier == "" {
+		dsn := dsnparser.Parse(config.DSN)
+		if dsn.GetHost() == "" {
+			return "", fmt.Errorf("invalid format for dsn: %s", dsn.GetRaw())
+		}
 
-	if port != "" {
-		return fmt.Sprintf("%s:%s", host, port), nil
-	}
+		if dsn.GetScheme() == "" {
+			dbIdentifier = dsn.GetHost()
+		}
 
-	return host, nil
+		dbIdentifier = fmt.Sprintf("%s:%s", dsn.GetHost(), dsn.GetPort())
+	}
+	return dbIdentifier, nil
 }

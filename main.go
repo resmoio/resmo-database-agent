@@ -5,11 +5,11 @@ import (
 	"fmt"
 	_ "github.com/ClickHouse/clickhouse-go"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/kos-v/dsnparser"
 	_ "github.com/lib/pq"
 	"log"
 	"resmo-db-mapper/pkg"
 	"resmo-db-mapper/pkg/config"
-	"strings"
 	"time"
 )
 
@@ -95,13 +95,15 @@ func runQueries(ctx context.Context, config config.Config, dbType string) error 
 func getDatabaseType(connectionString string) (string, error) {
 	var dbType string
 
-	if strings.HasPrefix(connectionString, "postgres://") || strings.HasPrefix(connectionString, "postgresql://") {
+	scheme := dsnparser.Parse(connectionString).GetScheme()
+
+	if scheme == "postgres" || scheme == "postgresql" {
 		dbType = "postgres"
-	} else if strings.HasPrefix(connectionString, "mongodb://") {
+	} else if scheme == "mongodb" {
 		dbType = "mongo"
-	} else if strings.HasPrefix(connectionString, "clickhouse://") {
+	} else if scheme == "clickhouse" {
 		dbType = "clickhouse"
-	} else if strings.HasPrefix(connectionString, "mysql://") {
+	} else if scheme == "mysql" {
 		dbType = "mysql"
 	} else {
 		return "", fmt.Errorf("unsupported database type for connection string: %s", connectionString)
