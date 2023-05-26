@@ -13,7 +13,7 @@ builds:
     binary: resmo-database-agent
 
 dockers:
-  - image_templates: ["ghcr.io/${{ github.repository }}:{{ .Version }}"]
+  - image_templates: ["ghcr.io/{{ .repository }}:{{ .Version }}"]
     dockerfile: Dockerfile
 archives:
   - format: tar.gz
